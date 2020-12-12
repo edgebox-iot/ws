@@ -1,22 +1,87 @@
 version: "3"
 services:
-
+  ######################################
   # Edgebox Web Service (Reverse Proxy)
+  ######################################
   proxy:
-    image: nginx
-    restart : always
-    # maps config file into the proxy container
-    volumes:
-      - ./default.conf:/etc/nginx/conf.d/default.conf
-      - ./error_pages:/usr/share/nginx/html/
+    image: jwilder/nginx-proxy
     ports:
-      - 80:80
-    links:
-      - api
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./assets:/usr/share/nginx/html/
+      - ./proxy.conf:/etc/nginx/proxy.conf
 
+  whoami:
+    image: jwilder/whoami
+    environment:
+      VIRTUAL_HOST: whoami.localhost
+
+  #############################
+  # Edgebox Task Queue Service
+  #############################
+  queue:
+    container_name: '${COMPOSE_PROJECT_NAME}-queue'
+    image: redis:latest
+    ports:
+      - "127.0.0.1:${HOST_MACHINE_REDIS_PORT}:6379"
+
+  ##############
   # API Service
-  api:
-    build:  ../api
+  ##############
+  api-ws:
+    build:  
+      context: ../api/bin/${WS_API_PHPVERSION}
+    container_name: '${COMPOSE_PROJECT_NAME}-api-ws-${WS_API_PHPVERSION}'
     restart: always
+    links:
+      - api-db
+    ports:
+      - "127.0.0.1:${WS_API_HOST_MACHINE_UNSECURE_HOST_PORT}:80"
+    volumes:
+      - ${WS_API_DOCUMENT_ROOT-../api/www}:/var/www/html
+      - ${WS_API_PHP_INI-../api/config/php/php.ini}:/usr/local/etc/php/php.ini
+      - ${WS_API_VHOSTS_DIR-../api/config/vhosts}:/etc/apache2/sites-enabled
+      - ${WS_API_APACHE_LOG_DIR-./appdata/api-ws/log/apache2}:/var/log/apache2
+    environment:
+      VIRTUAL_HOST: api.localhost
+      PMA_PORT: ${WS_API_HOST_MACHINE_PMA_PORT}
+  
+  api-db:
+    build:
+      context: "../api/bin/${WS_API_DATABASE}"
+    container_name: '${COMPOSE_PROJECT_NAME}-api-db'
+    restart: always
+    ports:
+      - "127.0.0.1:${WS_API_HOST_MACHINE_MYSQL_PORT}:3306"
+    volumes:
+      - ${WS_API_MYSQL_DATA_DIR-./appdata/api-db/data/mysql}:/var/lib/mysql
+      - ${WS_API_MYSQL_LOG_DIR-./appdata/api-db/log/mysql}:/var/log/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${WS_API_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${WS_API_MYSQL_DATABASE}
+      MYSQL_USER: ${WS_API_MYSQL_USER}
+      MYSQL_PASSWORD: ${WS_API_MYSQL_PASSWORD}
+  
+  api-pma: # For development purposes. Can comment with no prejurdice to the service.
+    image: phpmyadmin/phpmyadmin
+    container_name: '${COMPOSE_PROJECT_NAME}-api-pma'
+    links:
+      - api-db
+    environment:
+      VIRTUAL_HOST: pma.localhost
+      PMA_HOST: api-db
+      PMA_PORT: ${WS_API_HOST_MACHINE_PMA_PORT}
+      PMA_USER: root
+      PMA_PASSWORD: ${WS_API_MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${WS_API_MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${WS_API_MYSQL_USER}
+      MYSQL_PASSWORD: ${WS_API_MYSQL_PASSWORD}
+    ports:
+      - ${WS_API_HOST_MACHINE_PMA_PORT}:80
+    volumes:
+      - /sessions
+      - ${WS_API_PHP_INI-../api/config/php/php.ini}:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
+
 
   # -- EDGEAPPS CONFIG --
