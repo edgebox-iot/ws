@@ -72,6 +72,10 @@ while [ $# -gt 0 ] ; do
         kill=1
         docker-compose down
         ;;
+    -t|--terminal)
+        terminal=1
+        docker-compose exec $2 bash
+        ;;
     -o|--output)
         output="$2"
         shift
