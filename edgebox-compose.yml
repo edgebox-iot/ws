@@ -1,0 +1,29 @@
+version: "3"
+services:
+  ######################################
+  # Edgebox Web Service (Reverse Proxy)
+  ######################################
+  proxy:
+    container_name: '${COMPOSE_PROJECT_NAME}-proxy'
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./assets:/usr/share/nginx/html/
+      - ./proxy.conf:/etc/nginx/proxy.conf
+
+  whoami:
+    container_name: '${COMPOSE_PROJECT_NAME}-helloworld'
+    image: jwilder/whoami
+    environment:
+      VIRTUAL_HOST: whoami.localhost
+
+  #############################
+  # Edgebox Task Queue Service
+  #############################
+  queue:
+    container_name: '${COMPOSE_PROJECT_NAME}-queue'
+    image: redis:latest
+    ports:
+      - "127.0.0.1:${HOST_MACHINE_REDIS_PORT}:6379"

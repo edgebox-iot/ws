@@ -1,1 +1,3 @@
 appdata/*
+module-configs/*
+docker-compose.yml
