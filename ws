@@ -48,7 +48,7 @@ while [ $# -gt 0 ] ; do
             if test -f "$FILE"; then
                 echo "Building $FILE module -> docker-compose --env-file=$d/edgebox.env -f $FILE config > module-configs/$(basename $d).yml"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-                docker-compose --env-file=$d/edgebox.env -f $FILE config > module-configs/$(basename $d).yml
+		BUILD_ARCH=$(uname -m) docker-compose --env-file=$d/edgebox.env -f $FILE config > module-configs/$(basename $d).yml
             fi
         done
 
