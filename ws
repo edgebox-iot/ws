@@ -55,6 +55,10 @@ while [ $# -gt 0 ] ; do
         global_composer="${global_composer} config > docker-compose.yml"
         echo "Building global compose file -> $global_composer"
         eval $global_composer
+	echo "Starting Services"
+	docker-compose up -d --build
+	docker exec -w /var/www/html -it edgebox-api-ws composer install
+	docker exec -it edgebox-api-ws chmod -R 777 /var/www/html/app/Storage/Cache
         ;;
     -s|--start)
         start=1
