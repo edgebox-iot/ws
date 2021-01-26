@@ -42,6 +42,7 @@ while [ $# -gt 0 ] ; do
         build=1
         config_name="edgebox-compose.yml"
         global_composer="docker-compose"
+        entrypoint_file="entrypoint.sh"
 
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
@@ -49,7 +50,7 @@ while [ $# -gt 0 ] ; do
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
                 echo "Building $EDGEBOX_COMPOSE_FILE module -> docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-                BUILD_ARCH=$(uname -m) SERVICE_ENTRYPOINT=$d/entrypoint.sh docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                BUILD_ARCH=$(uname -m) SERVICE_ENTRYPOINT=$d$entrypoint_file docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
         done
 
