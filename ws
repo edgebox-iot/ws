@@ -31,7 +31,7 @@ EOF
 }
 publish_mdns_entries() {
     config_name="edgebox-hosts.txt"
-    domain=".local"
+    domain=".edgebox.local"
     if command -v avahi-publish -h &> /dev/null
     then
         echo "Publishing mDNS service entries"
@@ -46,6 +46,7 @@ publish_mdns_entries() {
     fi
 }
 kill_mdns_entries() {
+    echo "Killing mDNS service entries"
     pkill avahi-publish
 }
 foo=""
