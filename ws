@@ -49,8 +49,7 @@ while [ $# -gt 0 ] ; do
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
                 echo "Building $EDGEBOX_COMPOSE_FILE module -> docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-		        BUILD_ARCH=$(uname -m) 
-                docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                BUILD_ARCH=$(uname -m) SERVICE_ENTRYPOINT=$d/entrypoint.sh docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
         done
 
