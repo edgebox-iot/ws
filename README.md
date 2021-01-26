@@ -13,3 +13,4 @@ Edgebox Dynamic Web Service via nginx Reverse Proxy for subdirectory access to c
 
  - Way more information on the inner workings of this module and why it is organized like this.
  - Support for SSL and other stuff... Good enough for development right now.
+ - Information about "edgebox-compose" structure and how to create new modules...

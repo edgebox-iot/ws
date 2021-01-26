@@ -29,6 +29,29 @@ Options:
 EOF
     exit 1
 }
+publish_mdns_entries() {
+    config_name="edgebox-hosts.txt"
+    domain=".edgebox.local"
+    if command -v avahi-publish -h &> /dev/null
+    then
+        echo "Publishing mDNS service entries"
+        for d in ../*/ ; do
+            HOSTS_FILE="$d$config_name"
+            SERVICE_NAME="$(basename $d)"
+            if test -f "$HOSTS_FILE"; then
+                echo "Found configuration for $SERVICE_NAME service"
+		while IFS= read -r line
+		do
+                avahi-publish -a -R $line$domain $(hostname -I | awk '{print $1}') &
+		done < "$HOSTS_FILE"
+            fi
+        done
+    fi
+}
+kill_mdns_entries() {
+    echo "Killing mDNS service entries"
+    pkill avahi-publish
+}
 foo=""
 bar=""
 setup=0
@@ -42,27 +65,36 @@ while [ $# -gt 0 ] ; do
         build=1
         config_name="edgebox-compose.yml"
         global_composer="docker-compose"
+
         for d in ../*/ ; do
-            # echo "$d"
-            FILE="$d$config_name"
-            if test -f "$FILE"; then
-                echo "Building $FILE module -> docker-compose --env-file=$d/edgebox.env -f $FILE config > module-configs/$(basename $d).yml"
+            # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
+            EDGEBOX_COMPOSE_FILE="$d$config_name"
+            if test -f "$EDGEBOX_COMPOSE_FILE"; then
+                echo "Building $EDGEBOX_COMPOSE_FILE module -> docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-		BUILD_ARCH=$(uname -m) docker-compose --env-file=$d/edgebox.env -f $FILE config > module-configs/$(basename $d).yml
+                BUILD_ARCH=$(uname -m) docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
         done
 
         global_composer="${global_composer} config > docker-compose.yml"
+
         echo "Building global compose file -> $global_composer"
         eval $global_composer
-	echo "Starting Services"
-	docker-compose up -d --build
-	docker exec -w /var/www/html -it edgebox-api-ws composer install
-	docker exec -it edgebox-api-ws chmod -R 777 /var/www/html/app/Storage/Cache
+
+        echo "Starting Services"
+        docker-compose up -d --build
+
+        # TODO: This should really be executed inside its own service definition (port to edgebox-iot/api repo)
+        docker exec -w /var/www/html -it edgebox-api-ws composer install
+        docker exec -it edgebox-api-ws chmod -R 777 /var/www/html/app/Storage/Cache
+
+        publish_mdns_entries
+
         ;;
     -s|--start)
         start=1
         docker-compose up -d
+        publish_mdns_entries
         ;;
     -l|--logs)
         logs=1
@@ -71,10 +103,13 @@ while [ $# -gt 0 ] ; do
     -r|--restart)
         restart=1
         docker-compose restart $2
+        kill_mdns_entries
+        publish_mdns_entries
         ;;
     -k|--kill)
         kill=1
         docker-compose down
+        kill_mdns_entries
         ;;
     -t|--terminal)
         terminal=1

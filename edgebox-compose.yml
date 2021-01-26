@@ -7,18 +7,10 @@ services:
     build:
         context: "./bin/proxy/${BUILD_ARCH}"
     container_name: '${COMPOSE_PROJECT_NAME}-proxy'
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./assets:/usr/share/nginx/html/
       - ./proxy.conf:/etc/nginx/proxy.conf
-
-  #############################
-  # Edgebox Task Queue Service
-  #############################
-  queue:
-    container_name: '${COMPOSE_PROJECT_NAME}-queue'
-    image: redis:latest
-    ports:
-      - "127.0.0.1:${HOST_MACHINE_REDIS_PORT}:6379"
