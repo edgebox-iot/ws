@@ -40,7 +40,10 @@ publish_mdns_entries() {
             SERVICE_NAME="$(basename $d)"
             if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME service"
-                avahi-publish -a -R $SERVICE_NAME$domain $(hostname -I | awk '{print $1}') &
+		while IFS= read -r line
+		do
+                avahi-publish -a -R $line$domain $(hostname -I | awk '{print $1}') &
+		done < "$HOSTS_FILE"
             fi
         done
     fi
