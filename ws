@@ -42,23 +42,30 @@ while [ $# -gt 0 ] ; do
         build=1
         config_name="edgebox-compose.yml"
         global_composer="docker-compose"
+
         for d in ../*/ ; do
-            # echo "$d"
-            FILE="$d$config_name"
-            if test -f "$FILE"; then
-                echo "Building $FILE module -> docker-compose --env-file=$d/edgebox.env -f $FILE config > module-configs/$(basename $d).yml"
+            # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
+            EDGEBOX_COMPOSE_FILE="$d$config_name"
+            if test -f "$EDGEBOX_COMPOSE_FILE"; then
+                echo "Building $EDGEBOX_COMPOSE_FILE module -> docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-		        BUILD_ARCH=$(uname -m) docker-compose --env-file=$d/edgebox.env -f $FILE config > module-configs/$(basename $d).yml
+		        BUILD_ARCH=$(uname -m) 
+                docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
         done
 
         global_composer="${global_composer} config > docker-compose.yml"
+
         echo "Building global compose file -> $global_composer"
         eval $global_composer
+
         echo "Starting Services"
         docker-compose up -d --build
+
+        # TODO: This should really be executed inside its own service definition (port to edgebox-iot/api repo)
         docker exec -w /var/www/html -it edgebox-api-ws composer install
         docker exec -it edgebox-api-ws chmod -R 777 /var/www/html/app/Storage/Cache
+
         ;;
     -s|--start)
         start=1
