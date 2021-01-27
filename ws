@@ -5,6 +5,17 @@ die() {
     echo "$PROGNAME: $*" >&2
     exit 1
 }
+
+get_lan_ip () {
+    for adaptor in eth0 wlan0; do
+        if ip -o -4 addr list $adaptor  > /dev/null 2>&1 ; then
+            ip=$(ip -o -4 addr list $adaptor | awk '{print $4}' | cut -d/ -f1)
+        fi
+    done
+
+    echo $ip
+}
+
 usage() {
     if [ "$*" != "" ] ; then
         echo "Error: $*"
@@ -32,6 +43,7 @@ EOF
 publish_mdns_entries() {
     config_name="edgebox-hosts.txt"
     domain=".edgebox.local"
+    local_ip=$(get_lan_ip)
     if command -v avahi-publish -h &> /dev/null
     then
 
@@ -43,7 +55,7 @@ publish_mdns_entries() {
                 echo "Found configuration for $SERVICE_NAME service"
 		while IFS= read -r line
 		do
-                avahi-publish -a -R $line$domain $(hostname -I | awk '{print $1}') &
+                avahi-publish -a -R $line$domain $local_ip &
 		done < "$HOSTS_FILE"
             fi
         done
@@ -56,7 +68,7 @@ publish_mdns_entries() {
                 echo "Found configuration for $SERVICE_NAME edgeapp"
 		while IFS= read -r line
 		do
-		avahi-publish -a -R $line$domain $(hostname -I | awk '{print $1}') &
+		avahi-publish -a -R $line$domain $local_ip &
 		done < "$HOSTS_FILE"
 	    fi 
     	done
