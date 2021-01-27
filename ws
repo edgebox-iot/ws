@@ -85,7 +85,7 @@ while [ $# -gt 0 ] ; do
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
             EDGEBOX_COMPOSE_FILE="$d$config_name"
-	    EDGEBOX_ENV_FILE="$d$config_name"
+	    EDGEBOX_ENV_FILE="$d$env_name"
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
 		echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
