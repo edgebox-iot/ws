@@ -85,10 +85,11 @@ while [ $# -gt 0 ] ; do
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
             EDGEBOX_COMPOSE_FILE="$d$config_name"
+	    EDGEBOX_ENV_FILE="$d$config_name"
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
 		echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-                BUILD_ARCH=$(uname -m) docker-compose --env-file=$d$env_name -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
 	    fi
         done
 
@@ -97,10 +98,9 @@ while [ $# -gt 0 ] ; do
 	    EDGEBOX_COMPOSE_FILE="$d$config_name"
 	    EDGEBOX_ENV_FILE="$d$env_name"
 	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
-		    echo " - Building EdgeApp -> $(basename $d)"
-		    echo " - Building $(basename $d) EdgeApp -> docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
-		    global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-		    BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+		echo " - Building EdgeApp -> $(basename $d)"
+		global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+		BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
 	    fi
 
 	done
