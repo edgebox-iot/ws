@@ -34,7 +34,8 @@ publish_mdns_entries() {
     domain=".edgebox.local"
     if command -v avahi-publish -h &> /dev/null
     then
-        echo "Publishing mDNS service entries"
+
+        echo "Publishing mDNS service entries for modules"
         for d in ../*/ ; do
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
@@ -46,6 +47,20 @@ publish_mdns_entries() {
 		done < "$HOSTS_FILE"
             fi
         done
+	
+	echo "Publishing mDNS service entries for edgeapps"
+	for d in ../apps/*/ ; do
+	    HOSTS_FILE="$d$config_name"
+	    SERVICE_NAME="$(basename $d)"
+	    if test -f "$HOSTS_FILE"; then
+                echo "Found configuration for $SERVICE_NAME edgeapp"
+		while IFS= read -r line
+		do
+		avahi-publish -a -R $line$domain $(hostname -I | awk '{print $1}') &
+		done < "$HOSTS_FILE"
+	    fi 
+    	done
+
     fi
 }
 kill_mdns_entries() {
@@ -64,17 +79,31 @@ while [ $# -gt 0 ] ; do
     -b|--build)
         build=1
         config_name="edgebox-compose.yml"
+	env_name="edgebox.env"
         global_composer="docker-compose"
 
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
             EDGEBOX_COMPOSE_FILE="$d$config_name"
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
-                echo "Building $EDGEBOX_COMPOSE_FILE module -> docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
+		echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-                BUILD_ARCH=$(uname -m) docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
-            fi
+                BUILD_ARCH=$(uname -m) docker-compose --env-file=$d$env_name -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+	    fi
         done
+
+	for d in ../apps/*/ ; do
+	    # Now looking specifically for edgeapps... If they follow the correct package structure, it will fit seamleslly.
+	    EDGEBOX_COMPOSE_FILE="$d$config_name"
+	    EDGEBOX_ENV_FILE="$d$env_name"
+	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
+		    echo " - Building EdgeApp -> $(basename $d)"
+		    echo " - Building $(basename $d) EdgeApp -> docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
+		    global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+		    BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+	    fi
+
+	done
 
         global_composer="${global_composer} config > docker-compose.yml"
 
