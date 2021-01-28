@@ -61,7 +61,7 @@ publish_mdns_entries() {
     domain=".edgebox.local"
     local_ip=$(get_lan_ip)
     if command -v avahi-publish -h &> /dev/null; then
-        echo "Publishing mDNS service entries for modules"
+        echo "Publishing mDNS service entries for modules to ${local_ip}"
         for d in ../*/ ; do
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
@@ -74,7 +74,7 @@ publish_mdns_entries() {
             fi
         done
     
-        echo "Publishing mDNS service entries for edgeapps"
+        echo "Publishing mDNS service entries for edgeapps to ${local_ip}"
         for d in ../apps/*/ ; do
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
