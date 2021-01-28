@@ -34,6 +34,8 @@ EOF
 run_postinstall() {
     POSTINSTALL_FILE="./module-configs/postinstall.txt"
     if test -f "$POSTINSTALL_FILE"; then
+	echo "Waiting for Container Warmups before running post-install operations..."
+	sleep 60
 	echo "Executing post-install operations"
 	while IFS= read -r line
 	do
@@ -70,7 +72,7 @@ publish_mdns_entries() {
 		while IFS= read -r line
 		do
                 avahi-publish -a -R $line$domain $local_ip &
-		wait
+		sleep 3
 		done < "$HOSTS_FILE"
             fi
         done
@@ -84,7 +86,7 @@ publish_mdns_entries() {
 		while IFS= read -r line
 		do
 		avahi-publish -a -R $line$domain $local_ip &
-		wait
+		sleep 3
 		done < "$HOSTS_FILE"
 	    fi 
     	done
