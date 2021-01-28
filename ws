@@ -38,7 +38,6 @@ run_postinstall() {
 	while IFS= read -r line
 	do
 	    echo " -> docker-compose exec $line"
-	    postinstall_command="docker-compose exec $line"
    	    docker-compose exec $line &
 	    wait
 	done < "$POSTINSTALL_FILE"
@@ -71,6 +70,7 @@ publish_mdns_entries() {
 		while IFS= read -r line
 		do
                 avahi-publish -a -R $line$domain $local_ip &
+		wait
 		done < "$HOSTS_FILE"
             fi
         done
@@ -84,6 +84,7 @@ publish_mdns_entries() {
 		while IFS= read -r line
 		do
 		avahi-publish -a -R $line$domain $local_ip &
+		wait
 		done < "$HOSTS_FILE"
 	    fi 
     	done
