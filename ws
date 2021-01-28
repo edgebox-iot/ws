@@ -34,15 +34,15 @@ EOF
 run_postinstall() {
     POSTINSTALL_FILE="./module-configs/postinstall.txt"
     if test -f "$POSTINSTALL_FILE"; then
-	echo "Waiting for Container Warmups before running post-install operations..."
-	sleep 60
-	echo "Executing post-install operations"
-	while IFS= read -r line
-	do
-	    echo " -> docker-compose exec $line"
-   	    docker-compose exec $line &
-	    wait
-	done < "$POSTINSTALL_FILE"
+    echo "Waiting for Container Warmups before running post-install operations..."
+    sleep 60
+    echo "Executing post-install operations"
+    while IFS= read -r line
+    do
+        echo " -> docker-compose exec $line"
+           docker-compose exec $line &
+        wait
+    done < "$POSTINSTALL_FILE"
     fi
 }
 
@@ -60,36 +60,32 @@ publish_mdns_entries() {
     config_name="edgebox-hosts.txt"
     domain=".edgebox.local"
     local_ip=$(get_lan_ip)
-    if command -v avahi-publish -h &> /dev/null
-    then
-
+    if command -v avahi-publish -h &> /dev/null; then
         echo "Publishing mDNS service entries for modules"
         for d in ../*/ ; do
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
             if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME service"
-		while IFS= read -r line
-		do
-                avahi-publish -a -R $line$domain $local_ip &
-		sleep 3
-		done < "$HOSTS_FILE"
+                while IFS= read -r line; do
+                    avahi-publish -a -R $line$domain $local_ip &
+                    sleep 3
+                done < "$HOSTS_FILE"
             fi
         done
-	
-	echo "Publishing mDNS service entries for edgeapps"
-	for d in ../apps/*/ ; do
-	    HOSTS_FILE="$d$config_name"
-	    SERVICE_NAME="$(basename $d)"
-	    if test -f "$HOSTS_FILE"; then
+    
+        echo "Publishing mDNS service entries for edgeapps"
+        for d in ../apps/*/ ; do
+            HOSTS_FILE="$d$config_name"
+            SERVICE_NAME="$(basename $d)"
+            if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME edgeapp"
-		while IFS= read -r line
-		do
-		avahi-publish -a -R $line$domain $local_ip &
-		sleep 3
-		done < "$HOSTS_FILE"
-	    fi 
-    	done
+                while IFS= read -r line; do
+                    avahi-publish -a -R $line$domain $local_ip &
+                    sleep 3
+                done < "$HOSTS_FILE"
+            fi 
+        done
 
     fi
 }
@@ -111,49 +107,49 @@ while [ $# -gt 0 ] ; do
     -b|--build)
         build=1
         config_name="edgebox-compose.yml"
-	    env_name="edgebox.env"
-	    postinstall_file="edgebox-postinstall.txt"
+        env_name="edgebox.env"
+        postinstall_file="edgebox-postinstall.txt"
         global_composer="docker-compose"
-	
+    
         if test -f ./module-configs/postinstall.txt; then
             rm module-configs/postinstall.txt
         fi
-	
-	    touch module-configs/postinstall.txt
+    
+        touch module-configs/postinstall.txt
 
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
             EDGEBOX_COMPOSE_FILE="$d$config_name"
-	        EDGEBOX_ENV_FILE="$d$env_name"
+            EDGEBOX_ENV_FILE="$d$env_name"
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
-	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
-		echo " - Building $(basename $d) module"
+        if test -f "$EDGEBOX_COMPOSE_FILE"; then
+        echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
                 BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
-	    fi
-	    if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
-	        echo " - Building $(basename $d) post-install"
-		    cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
-	    fi
+        fi
+        if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+            echo " - Building $(basename $d) post-install"
+            cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+        fi
 
         done
 
-	for d in ../apps/*/ ; do
-	    # Now looking specifically for edgeapps... If they follow the correct package structure, it will fit seamleslly.
-	    EDGEBOX_COMPOSE_FILE="$d$config_name"
-	    EDGEBOX_ENV_FILE="$d$env_name"
-	    EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
-	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
-		    echo " - Building EdgeApp -> $(basename $d)"
-		    global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-		    BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
-	    fi
-	    if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
-	        echo " - Building $(basename $d) post-install"
-		    cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
-	    fi
+    for d in ../apps/*/ ; do
+        # Now looking specifically for edgeapps... If they follow the correct package structure, it will fit seamleslly.
+        EDGEBOX_COMPOSE_FILE="$d$config_name"
+        EDGEBOX_ENV_FILE="$d$env_name"
+        EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+        if test -f "$EDGEBOX_COMPOSE_FILE"; then
+            echo " - Building EdgeApp -> $(basename $d)"
+            global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+            BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+        fi
+        if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+            echo " - Building $(basename $d) post-install"
+            cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+        fi
 
-	done
+    done
 
         global_composer="${global_composer} config > docker-compose.yml"
 
@@ -163,7 +159,7 @@ while [ $# -gt 0 ] ; do
         echo "Starting Services"
         docker-compose up -d --build
 
-	run_postinstall
+    run_postinstall
 
         publish_mdns_entries
 
