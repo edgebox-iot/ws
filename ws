@@ -6,6 +6,20 @@ die() {
     exit 1
 }
 
+run_postinstall() {
+    POSTINSTALL_FILE="./module-configs/postinstall.txt"
+    if test -f "$POSTINSTALL_FILE"; then
+	echo "Executing post-install operations"
+	while IFS= read -r line
+	do
+	    echo " -> docker-compose exec $line"
+	    postinstall_command="docker-compose exec $line"
+   	    docker-compose exec $line &
+	    wait
+	done < "$POSTINSTALL_FILE"
+    fi
+}
+
 get_lan_ip () {
     for adaptor in eth0 wlan0; do
         if ip -o -4 addr list $adaptor  > /dev/null 2>&1 ; then
@@ -82,6 +96,7 @@ kill_mdns_entries() {
 foo=""
 bar=""
 setup=0
+	    docker-compose exec $line
 output="-"
 while [ $# -gt 0 ] ; do
     case "$1" in
@@ -92,27 +107,45 @@ while [ $# -gt 0 ] ; do
         build=1
         config_name="edgebox-compose.yml"
 	env_name="edgebox.env"
+	postinstall_file="edgebox-postinstall.txt"
         global_composer="docker-compose"
+	
+	if test -f ./module-configs/postinstall.txt; then
+	    rm module-configs/postinstall.txt
+	fi
+	
+	touch module-configs/postinstall.txt
 
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
             EDGEBOX_COMPOSE_FILE="$d$config_name"
 	    EDGEBOX_ENV_FILE="$d$env_name"
-            if test -f "$EDGEBOX_COMPOSE_FILE"; then
+            EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
 		echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
                 BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
 	    fi
+	    if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+	        echo " - Building $(basename $d) post-install"
+		cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+	    fi
+
         done
 
 	for d in ../apps/*/ ; do
 	    # Now looking specifically for edgeapps... If they follow the correct package structure, it will fit seamleslly.
 	    EDGEBOX_COMPOSE_FILE="$d$config_name"
 	    EDGEBOX_ENV_FILE="$d$env_name"
+	    EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
 	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
 		echo " - Building EdgeApp -> $(basename $d)"
 		global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
 		BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+	    fi
+	    if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+	        echo " - Building $(basename $d) post-install"
+		cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
 	    fi
 
 	done
@@ -125,9 +158,7 @@ while [ $# -gt 0 ] ; do
         echo "Starting Services"
         docker-compose up -d --build
 
-        # TODO: This should really be executed inside its own service definition (port to edgebox-iot/api repo)
-        docker exec -w /var/www/html -it edgebox-api-ws composer install
-        docker exec -it edgebox-api-ws chmod -R 777 /var/www/html/app/Storage/Cache
+	run_postinstall
 
         publish_mdns_entries
 
