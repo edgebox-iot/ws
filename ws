@@ -6,30 +6,6 @@ die() {
     exit 1
 }
 
-run_postinstall() {
-    POSTINSTALL_FILE="./module-configs/postinstall.txt"
-    if test -f "$POSTINSTALL_FILE"; then
-	echo "Executing post-install operations"
-	while IFS= read -r line
-	do
-	    echo " -> docker-compose exec $line"
-	    postinstall_command="docker-compose exec $line"
-   	    docker-compose exec $line &
-	    wait
-	done < "$POSTINSTALL_FILE"
-    fi
-}
-
-get_lan_ip () {
-    for adaptor in eth0 wlan0; do
-        if ip -o -4 addr list $adaptor  > /dev/null 2>&1 ; then
-            ip=$(ip -o -4 addr list $adaptor | awk '{print $4}' | cut -d/ -f1)
-        fi
-    done
-
-    echo $ip
-}
-
 usage() {
     if [ "$*" != "" ] ; then
         echo "Error: $*"
@@ -54,6 +30,31 @@ Options:
 EOF
     exit 1
 }
+
+run_postinstall() {
+    POSTINSTALL_FILE="./module-configs/postinstall.txt"
+    if test -f "$POSTINSTALL_FILE"; then
+	echo "Executing post-install operations"
+	while IFS= read -r line
+	do
+	    echo " -> docker-compose exec $line"
+	    postinstall_command="docker-compose exec $line"
+   	    docker-compose exec $line &
+	    wait
+	done < "$POSTINSTALL_FILE"
+    fi
+}
+
+get_lan_ip () {
+    for adaptor in eth0 wlan0; do
+        if ip -o -4 addr list $adaptor  > /dev/null 2>&1 ; then
+            ip=$(ip -o -4 addr list $adaptor | awk '{print $4}' | cut -d/ -f1)
+        fi
+    done
+
+    echo $ip
+}
+
 publish_mdns_entries() {
     config_name="edgebox-hosts.txt"
     domain=".edgebox.local"
@@ -89,14 +90,15 @@ publish_mdns_entries() {
 
     fi
 }
+
 kill_mdns_entries() {
     echo "Killing mDNS service entries"
     pkill avahi-publish
 }
+
 foo=""
 bar=""
 setup=0
-	    docker-compose exec $line
 output="-"
 while [ $# -gt 0 ] ; do
     case "$1" in
@@ -106,20 +108,20 @@ while [ $# -gt 0 ] ; do
     -b|--build)
         build=1
         config_name="edgebox-compose.yml"
-	env_name="edgebox.env"
-	postinstall_file="edgebox-postinstall.txt"
+	    env_name="edgebox.env"
+	    postinstall_file="edgebox-postinstall.txt"
         global_composer="docker-compose"
 	
-	if test -f ./module-configs/postinstall.txt; then
-	    rm module-configs/postinstall.txt
-	fi
+        if test -f ./module-configs/postinstall.txt; then
+            rm module-configs/postinstall.txt
+        fi
 	
-	touch module-configs/postinstall.txt
+	    touch module-configs/postinstall.txt
 
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
             EDGEBOX_COMPOSE_FILE="$d$config_name"
-	    EDGEBOX_ENV_FILE="$d$env_name"
+	        EDGEBOX_ENV_FILE="$d$env_name"
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
 	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
 		echo " - Building $(basename $d) module"
@@ -128,7 +130,7 @@ while [ $# -gt 0 ] ; do
 	    fi
 	    if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
 	        echo " - Building $(basename $d) post-install"
-		cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+		    cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
 	    fi
 
         done
@@ -139,13 +141,13 @@ while [ $# -gt 0 ] ; do
 	    EDGEBOX_ENV_FILE="$d$env_name"
 	    EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
 	    if test -f "$EDGEBOX_COMPOSE_FILE"; then
-		echo " - Building EdgeApp -> $(basename $d)"
-		global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-		BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+		    echo " - Building EdgeApp -> $(basename $d)"
+		    global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+		    BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
 	    fi
 	    if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
 	        echo " - Building $(basename $d) post-install"
-		cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+		    cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
 	    fi
 
 	done
