@@ -95,6 +95,26 @@ kill_mdns_entries() {
     pkill avahi-publish
 }
 
+setup_myedgebox_tunnel() {
+    
+    echo "Setting up myedgeapp service"
+
+    MYEDGEAPP_TOKEN = `cat /home/system/.myedgeapp_token`
+
+    if [ "$MYEDGEAPP_TOKEN" = "<REPLACE_THIS_WITH_TUNNEL_ACCESS_TOKEN>" ]; then
+        read -p "No myedge.app access token found in installation. Please provide one: " MYEDGEAPP_TOKEN
+    else
+        echo "Token found - Setting up."        
+    fi
+
+    sudo tinc-boot gen --token $MYEDGEAPP_TOKEN 157.230.97.104:8655 # Help Wanted: Enable connection to boot-node via domain (myedge.app)
+    sudo systemctl start tinc@dnet
+    sudo systemctl enable tinc@dnet
+
+    # TODO: Send Request to boot-node so it can automatically setup etc and traefik to correctly route the domains.
+
+}
+
 foo=""
 bar=""
 setup=0
@@ -134,22 +154,22 @@ while [ $# -gt 0 ] ; do
 
         done
 
-    for d in ../apps/*/ ; do
-        # Now looking specifically for edgeapps... If they follow the correct package structure, it will fit seamleslly.
-        EDGEBOX_COMPOSE_FILE="$d$config_name"
-        EDGEBOX_ENV_FILE="$d$env_name"
-        EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
-        if test -f "$EDGEBOX_COMPOSE_FILE"; then
-            echo " - Building EdgeApp -> $(basename $d)"
-            global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-            BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
-        fi
-        if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
-            echo " - Building $(basename $d) post-install"
-            cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
-        fi
+        for d in ../apps/*/ ; do
+            # Now looking specifically for edgeapps... If they follow the correct package structure, it will fit seamleslly.
+            EDGEBOX_COMPOSE_FILE="$d$config_name"
+            EDGEBOX_ENV_FILE="$d$env_name"
+            EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+            if test -f "$EDGEBOX_COMPOSE_FILE"; then
+                echo " - Building EdgeApp -> $(basename $d)"
+                global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+                BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+            fi
+            if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+                echo " - Building $(basename $d) post-install"
+                cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+            fi
 
-    done
+        done
 
         global_composer="${global_composer} config > docker-compose.yml"
 
@@ -159,9 +179,12 @@ while [ $# -gt 0 ] ; do
         echo "Starting Services"
         docker-compose up -d --build
 
-    run_postinstall
+        run_postinstall
 
         publish_mdns_entries
+
+        # Systemctl service. Only needs to be run once and auto-starts
+        setup_myedgebox_tunnel
 
         ;;
     -s|--start)
