@@ -107,12 +107,12 @@ setup_myedgebox_tunnel() {
         echo "Token found - Setting up."        
     fi
 
-    sudo tinc-boot gen --token $MYEDGEAPP_TOKEN 157.230.97.104:8655 # Help Wanted: Enable connection to boot-node via domain (myedge.app)
+    # TODO: Send Request to boot-node to obtain available prefix, and so it can automatically setup etcd and traefik to correctly route the domains.
+
+
+    sudo tinc-boot gen --token $MYEDGEAPP_TOKEN 157.230.110.104:8655 # Help Wanted: Enable connection to boot-node via domain (myedge.app) or have secure way of setting up origin ip directly
     sudo systemctl start tinc@dnet
     sudo systemctl enable tinc@dnet
-
-    # TODO: Send Request to boot-node so it can automatically setup etc and traefik to correctly route the domains.
-
 }
 
 foo=""
