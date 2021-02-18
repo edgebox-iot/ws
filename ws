@@ -163,6 +163,8 @@ while [ $# -gt 0 ] ; do
 
         publish_mdns_entries
 
+        touch .ready
+
         ;;
     -s|--start)
         start=1
