@@ -95,26 +95,6 @@ kill_mdns_entries() {
     pkill avahi-publish
 }
 
-setup_myedgebox_tunnel() {
-    
-    echo "Setting up myedgeapp service"
-
-    MYEDGEAPP_TOKEN = `cat /home/system/.myedgeapp_token`
-
-    if [ "$MYEDGEAPP_TOKEN" = "<REPLACE_THIS_WITH_TUNNEL_ACCESS_TOKEN>" ]; then
-        read -p "No myedge.app access token found in installation. Please provide one: " MYEDGEAPP_TOKEN
-    else
-        echo "Token found - Setting up."        
-    fi
-
-    # TODO: Send Request to boot-node to obtain available prefix, and so it can automatically setup etcd and traefik to correctly route the domains.
-
-
-    sudo tinc-boot gen --token $MYEDGEAPP_TOKEN 157.230.110.104:8655 # Help Wanted: Enable connection to boot-node via domain (myedge.app) or have secure way of setting up origin ip directly
-    sudo systemctl start tinc@dnet
-    sudo systemctl enable tinc@dnet
-}
-
 foo=""
 bar=""
 setup=0
@@ -182,9 +162,6 @@ while [ $# -gt 0 ] ; do
         run_postinstall
 
         publish_mdns_entries
-
-        # Systemctl service. Only needs to be run once and auto-starts
-        setup_myedgebox_tunnel
 
         ;;
     -s|--start)
