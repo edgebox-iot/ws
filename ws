@@ -61,6 +61,7 @@ publish_mdns_entries() {
     domain=".edgebox.local"
     local_ip=$(get_lan_ip)
     if command -v avahi-publish -h &> /dev/null; then
+    
         echo "Publishing mDNS service entries for modules to ${local_ip}"
         for d in ../*/ ; do
             HOSTS_FILE="$d$config_name"
@@ -68,7 +69,7 @@ publish_mdns_entries() {
             if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME service"
                 while IFS= read -r line; do
-                    avahi-publish -a -R $line$domain $local_ip &
+                    nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
                     sleep 3
                 done < "$HOSTS_FILE"
             fi
@@ -81,7 +82,7 @@ publish_mdns_entries() {
             if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME edgeapp"
                 while IFS= read -r line; do
-                    avahi-publish -a -R $line$domain $local_ip &
+                    nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
                     sleep 3
                 done < "$HOSTS_FILE"
             fi 
@@ -232,4 +233,3 @@ cat <<EOF
 -----------------------
 
 EOF
-exit 0
