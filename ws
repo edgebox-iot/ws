@@ -108,6 +108,7 @@ while [ $# -gt 0 ] ; do
         build=1
         config_name="edgebox-compose.yml"
         env_name="edgebox.env"
+        myedgeappenv_name="myedgeapp.env"
         postinstall_file="edgebox-postinstall.txt"
         global_composer="docker-compose"
     
@@ -139,9 +140,17 @@ while [ $# -gt 0 ] ; do
             EDGEBOX_COMPOSE_FILE="$d$config_name"
             EDGEBOX_ENV_FILE="$d$env_name"
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+            MYEDGEAPP_ENV_FILE="$d$myedgeappenv_name"
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
                 echo " - Building EdgeApp -> $(basename $d)"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+                # Check existance of myedge.app config file, apply it as ENV VAR before building config file.
+                echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
+                if test -f "$MYEDGEAPP_ENV_FILE"; then
+                    export $(cat $MYEDGEAPP_ENV_FILE | xargs)
+                    echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
+                    INTERNET_URL=",$INTERNET_URL"
+                fi
                 BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
             if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
