@@ -34,15 +34,15 @@ EOF
 run_postinstall() {
     POSTINSTALL_FILE="./module-configs/postinstall.txt"
     if test -f "$POSTINSTALL_FILE"; then
-    echo "Waiting for Container Warmups before running post-install operations..."
-    sleep 60
-    echo "Executing post-install operations"
-    while IFS= read -r line
-    do
-        echo " -> docker-compose exec $line"
-           docker-compose exec $line &
-        wait
-    done < "$POSTINSTALL_FILE"
+        echo "Waiting for Container Warmups before running post-install operations..."
+        sleep 10 # This is base time. To add further delay, execute the sleep inside of the postinstall...
+        echo "Executing post-install operations"
+        while IFS= read -r line
+        do
+            echo " -> docker-compose exec $line"
+            docker-compose exec $line &
+            wait
+        done < "$POSTINSTALL_FILE"
     fi
 }
 
@@ -232,3 +232,4 @@ cat <<EOF
 -----------------------
 
 EOF
+exit 0
