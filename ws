@@ -149,6 +149,8 @@ while [ $# -gt 0 ] ; do
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
             EDGEBOX_RUNNABLE_FILE="$d$runnable_file"
             MYEDGEAPP_ENV_FILE="$d$myedgeappenv_name"
+            INTERNET_URL=""
+            
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
                 echo " - Found Edgebox Application Config File"
                 if test -f "$EDGEBOX_RUNNABLE_FILE"; then
@@ -159,6 +161,7 @@ while [ $# -gt 0 ] ; do
                     if test -f "$MYEDGEAPP_ENV_FILE"; then
                         export $(cat $MYEDGEAPP_ENV_FILE | xargs)
                         echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
+                        INTERNET_URL_NOCOMMA="$INTERNET_URL"
                         INTERNET_URL=",$INTERNET_URL"
                     fi
                     BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
@@ -166,7 +169,8 @@ while [ $# -gt 0 ] ; do
             fi
             if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
                 echo " - Building $(basename $d) post-install"
-                cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+                INTERNET_URL="$INTERNET_URL_NOCOMMA"
+                eval "echo \"$(cat $EDGEBOX_POSTINSTALL_FILE)\"" >> ./module-configs/postinstall.txt
             fi
 
         done
