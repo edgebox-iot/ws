@@ -82,6 +82,7 @@ publish_mdns_entries() {
             if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME edgeapp"
                 while IFS= read -r line; do
+		            echo "Publishing domain $line$domain"
                     nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
                     sleep 3
                 done < "$HOSTS_FILE"
