@@ -5,6 +5,7 @@ die() {
     echo "$PROGNAME: $*" >&2
     exit 1
 }
+
 usage() {
     if [ "$*" != "" ] ; then
         echo "Error: $*"
@@ -29,29 +30,77 @@ Options:
 EOF
     exit 1
 }
+
+run_postinstall() {
+    POSTINSTALL_FILE="./module-configs/postinstall.txt"
+    if test -f "$POSTINSTALL_FILE"; then
+        echo "Waiting for Container Warmups before running post-install operations..."
+        sleep 10 # This is base time. To add further delay, execute the sleep inside of the postinstall...
+        echo "Executing post-install operations"
+        while IFS= read -r line
+        do
+            echo " -> docker-compose exec $line"
+            docker-compose exec $line &
+            wait
+        done < "$POSTINSTALL_FILE"
+    fi
+}
+
+get_lan_ip () {
+    for adaptor in eth0 wlan0; do
+        if ip -o -4 addr list $adaptor  > /dev/null 2>&1 ; then
+            ip=$(ip -o -4 addr list $adaptor | awk '{print $4}' | cut -d/ -f1)
+        fi
+    done
+
+    echo $ip
+}
+
 publish_mdns_entries() {
+    runnable_file=".run"
     config_name="edgebox-hosts.txt"
     domain=".edgebox.local"
-    if command -v avahi-publish -h &> /dev/null
-    then
-        echo "Publishing mDNS service entries"
+    local_ip=$(get_lan_ip)
+    if command -v avahi-publish -h &> /dev/null; then
+    
+        echo "Publishing mDNS service entries for modules to ${local_ip}"
         for d in ../*/ ; do
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
             if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME service"
-		while IFS= read -r line
-		do
-                avahi-publish -a -R $line$domain $(hostname -I | awk '{print $1}') &
-		done < "$HOSTS_FILE"
+                while IFS= read -r line; do
+                    nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
+                    sleep 3
+                done < "$HOSTS_FILE"
             fi
         done
+    
+        echo "Publishing mDNS service entries for edgeapps to ${local_ip}"
+        for d in ../apps/*/ ; do
+            HOSTS_FILE="$d$config_name"
+            SERVICE_NAME="$(basename $d)"
+            RUNNABLE_FILE="$d$runnable_file"
+            if test -f "$HOSTS_FILE"; then
+                echo "Found configuration for $SERVICE_NAME edgeapp"
+                if test -f "$RUNNABLE_FILE"; then
+                    while IFS= read -r line; do
+                        echo "Publishing domain $line$domain"
+                        nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
+                        sleep 3
+                    done < "$HOSTS_FILE"
+                fi
+            fi 
+        done
+
     fi
 }
+
 kill_mdns_entries() {
     echo "Killing mDNS service entries"
     pkill avahi-publish
 }
+
 foo=""
 bar=""
 setup=0
@@ -64,16 +113,66 @@ while [ $# -gt 0 ] ; do
     -b|--build)
         build=1
         config_name="edgebox-compose.yml"
+        env_name="edgebox.env"
+        myedgeappenv_name="myedgeapp.env"
+        postinstall_file="edgebox-postinstall.txt"
+        runnable_file=".run"
         global_composer="docker-compose"
+    
+        if test -f ./module-configs/postinstall.txt; then
+            rm module-configs/postinstall.txt
+        fi
+    
+        touch module-configs/postinstall.txt
 
         for d in ../*/ ; do
             # Iterating through each one of the directories in the "components" dir, look for edgebox-compose service definitions...
             EDGEBOX_COMPOSE_FILE="$d$config_name"
-            if test -f "$EDGEBOX_COMPOSE_FILE"; then
-                echo "Building $EDGEBOX_COMPOSE_FILE module -> docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml"
+            EDGEBOX_ENV_FILE="$d$env_name"
+            EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+        if test -f "$EDGEBOX_COMPOSE_FILE"; then
+        echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-                BUILD_ARCH=$(uname -m) docker-compose --env-file=$d/edgebox.env -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+        fi
+        if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+            echo " - Building $(basename $d) post-install"
+            cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+        fi
+
+        done
+
+        for d in ../apps/*/ ; do
+            # Now looking specifically for edgeapps... If they follow the correct package structure, it will fit seamleslly.
+            EDGEBOX_COMPOSE_FILE="$d$config_name"
+            EDGEBOX_ENV_FILE="$d$env_name"
+            EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+            EDGEBOX_RUNNABLE_FILE="$d$runnable_file"
+            MYEDGEAPP_ENV_FILE="$d$myedgeappenv_name"
+            INTERNET_URL=""
+            
+            if test -f "$EDGEBOX_COMPOSE_FILE"; then
+                echo " - Found Edgebox Application Config File"
+                if test -f "$EDGEBOX_RUNNABLE_FILE"; then
+                    echo " - Building EdgeApp -> $(basename $d)"
+                    global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+                    # Check existance of myedge.app config file, apply it as ENV VAR before building config file.
+                    echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
+                    if test -f "$MYEDGEAPP_ENV_FILE"; then
+                        export $(cat $MYEDGEAPP_ENV_FILE | xargs)
+                        echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
+                        INTERNET_URL_NOCOMMA="$INTERNET_URL"
+                        INTERNET_URL=",$INTERNET_URL"
+                    fi
+                    BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                fi
             fi
+            if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+                echo " - Building $(basename $d) post-install"
+                INTERNET_URL="$INTERNET_URL_NOCOMMA"
+                eval "echo \"$(cat $EDGEBOX_POSTINSTALL_FILE)\"" >> ./module-configs/postinstall.txt
+            fi
+
         done
 
         global_composer="${global_composer} config > docker-compose.yml"
@@ -84,11 +183,11 @@ while [ $# -gt 0 ] ; do
         echo "Starting Services"
         docker-compose up -d --build
 
-        # TODO: This should really be executed inside its own service definition (port to edgebox-iot/api repo)
-        docker exec -w /var/www/html -it edgebox-api-ws composer install
-        docker exec -it edgebox-api-ws chmod -R 777 /var/www/html/app/Storage/Cache
+        run_postinstall
 
         publish_mdns_entries
+
+        touch .ready
 
         ;;
     -s|--start)
