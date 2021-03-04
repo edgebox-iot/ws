@@ -57,6 +57,7 @@ get_lan_ip () {
 }
 
 publish_mdns_entries() {
+    runnable_file=".run"
     config_name="edgebox-hosts.txt"
     domain=".edgebox.local"
     local_ip=$(get_lan_ip)
@@ -79,13 +80,16 @@ publish_mdns_entries() {
         for d in ../apps/*/ ; do
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
+            RUNNABLE_FILE="$d$runnable_file"
             if test -f "$HOSTS_FILE"; then
                 echo "Found configuration for $SERVICE_NAME edgeapp"
-                while IFS= read -r line; do
-		            echo "Publishing domain $line$domain"
-                    nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
-                    sleep 3
-                done < "$HOSTS_FILE"
+                if test -f "$RUNNABLE_FILE"; then
+                    while IFS= read -r line; do
+                        echo "Publishing domain $line$domain"
+                        nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
+                        sleep 3
+                    done < "$HOSTS_FILE"
+                fi
             fi 
         done
 
@@ -112,6 +116,7 @@ while [ $# -gt 0 ] ; do
         env_name="edgebox.env"
         myedgeappenv_name="myedgeapp.env"
         postinstall_file="edgebox-postinstall.txt"
+        runnable_file=".run"
         global_composer="docker-compose"
     
         if test -f ./module-configs/postinstall.txt; then
@@ -142,18 +147,22 @@ while [ $# -gt 0 ] ; do
             EDGEBOX_COMPOSE_FILE="$d$config_name"
             EDGEBOX_ENV_FILE="$d$env_name"
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+            EDGEBOX_RUNNABLE_FILE="$d$runnable_file"
             MYEDGEAPP_ENV_FILE="$d$myedgeappenv_name"
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
-                echo " - Building EdgeApp -> $(basename $d)"
-                global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
-                # Check existance of myedge.app config file, apply it as ENV VAR before building config file.
-                echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
-                if test -f "$MYEDGEAPP_ENV_FILE"; then
-                    export $(cat $MYEDGEAPP_ENV_FILE | xargs)
-                    echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
-                    INTERNET_URL=",$INTERNET_URL"
+                echo " - Found Edgebox Application Config File"
+                if test -f "$EDGEBOX_RUNNABLE_FILE"; then
+                    echo " - Building EdgeApp -> $(basename $d)"
+                    global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+                    # Check existance of myedge.app config file, apply it as ENV VAR before building config file.
+                    echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
+                    if test -f "$MYEDGEAPP_ENV_FILE"; then
+                        export $(cat $MYEDGEAPP_ENV_FILE | xargs)
+                        echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
+                        INTERNET_URL=",$INTERNET_URL"
+                    fi
+                    BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
                 fi
-                BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
             if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
                 echo " - Building $(basename $d) post-install"
