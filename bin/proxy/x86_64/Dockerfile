@@ -1,1 +1,1 @@
-FROM nginxproxy/nginx-proxy:1586
+FROM jwilder/nginx-proxy:latest
