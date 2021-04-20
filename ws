@@ -21,11 +21,12 @@ Usage: $PROGNAME [OPTION ...] [foo] [bar]
 Options:
 -h, --help               display this usage message and exit
 -b, --build              build global docker-commpose file
+-c, --clean              clean appdata directory
 -s, --start              docker-compose up -d
 -l, --logs [SERVICE]     docker-compose logs for [SERVICE]
 -r, --restart [SERVICE]  docker-compose restart [SERVICE]
 -k, --kill               docker-compose down
--o, --output [FILE] write output to file
+-o, --output [FILE]      write output to file
 
 EOF
     exit 1
@@ -54,6 +55,11 @@ get_lan_ip () {
     done
 
     echo $ip
+}
+
+clean () {
+    echo "Cleaning all data from appdata"
+    sudo rm -rf appdata/*
 }
 
 publish_mdns_entries() {
@@ -213,6 +219,9 @@ while [ $# -gt 0 ] ; do
     -t|--terminal)
         terminal=1
         docker-compose exec $2 bash
+        ;;
+    -c|--clean)
+        clean
         ;;
     -o|--output)
         output="$2"
