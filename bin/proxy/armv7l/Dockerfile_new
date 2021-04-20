@@ -1,0 +1,3 @@
+# Newest version supports armv7l and other architectures. No more need to have a custom Dockerfile
+
+FROM jwilder/nginx-proxy:latest

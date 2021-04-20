@@ -1,3 +1,7 @@
+# Newest version now supports multi-arch builds.
+# FROM jwilder/nginx-proxy:latest
+
+# Testing specific PR of NGINX_PROXY_VERSION w/ branch for supporting path based routing
 FROM arm32v7/nginx 
 
 LABEL maintainer="Paulo Truta paulo@edgebox.io"
@@ -23,12 +27,15 @@ RUN wget https://bin.equinox.io/c/ekMN3bCZFUn/forego-stable-linux-arm.tgz \
  && rm forego-stable-linux-arm.tgz
 
 # Install docker-gen
-RUN wget https://github.com/jwilder/docker-gen/releases/download/0.7.4/docker-gen-linux-armhf-0.7.4.tar.gz \
- && tar -C /usr/local/bin -xvzf docker-gen-linux-armhf-0.7.4.tar.gz \
- && rm docker-gen-linux-armhf-0.7.4.tar.gz
+# RUN wget https://github.com/jwilder/docker-gen/releases/download/0.7.4/docker-gen-linux-armhf-0.7.4.tar.gz \
+#  && tar -C /usr/local/bin -xvzf docker-gen-linux-armhf-0.7.4.tar.gz \
+#  && rm docker-gen-linux-armhf-0.7.4.tar.gz
 
-ENV NGINX_PROXY_VERSION "0.6.0"
-RUN git clone --branch ${NGINX_PROXY_VERSION} https://github.com/jwilder/nginx-proxy.git /app
+# Install custom build of docker-gen
+COPY ./docker-gen /usr/local/bin/docker-gen
+
+ENV NGINX_PROXY_VERSION "main"
+RUN git clone --branch ${NGINX_PROXY_VERSION} https://github.com/AlexanderLieret/nginx-proxy /app
 
 WORKDIR /app/
 
