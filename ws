@@ -71,23 +71,7 @@ publish_mdns_entries() {
     local_ip=$(get_lan_ip)
     if command -v avahi-publish -h &> /dev/null; then
     
-        echo "Publishing mDNS serun_postinstall() {
-    POSTINSTALL_FILE="./module-configs/postinstall.txt"
-    if test -f "$POSTINSTALL_FILE"; then
-        echo "Waiting for Container Warmups before running post-install operations..."
-        sleep 10
-        echo "Executing post-install operations"
-        LINES=`cat $POSTINSTALL_FILE`
-
-        for line in $LINES
-        do
-            echo " -> docker-compose exec $line"
-            docker-compose exec $line &
-            wait
-        done
-        echo "Finished post-install operations"
-    fi
-}rvice entries for modules to ${local_ip}"
+        echo "Publishing mDNS service entries for modules to ${local_ip}"
         for d in ../*/ ; do
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
