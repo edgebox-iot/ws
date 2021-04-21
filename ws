@@ -39,14 +39,24 @@ run_postinstall() {
         sleep 10 # This is base time. To add further delay, execute the sleep inside of the postinstall...
         echo "Executing post-install operations"
 
+        # Version by paulotruta (runs on real hardware. Does it run on arch? :D)
         while read line
         do
-
+        
             echo " -> docker-compose exec $line"
             docker-compose exec $line &
             wait 
 
         done < "$POSTINSTALL_FILE"
+
+        # Version by inverse (does not run on the hardware).
+        # LINES=`cat $POSTINSTALL_FILE`
+        # for line in $LINES
+        # do
+        #     echo " -> docker-compose exec $line"
+        #     docker-compose exec $line &
+        #     wait
+        # done
 
         echo "Finished post-install operations"
     fi
