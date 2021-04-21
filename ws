@@ -38,12 +38,15 @@ run_postinstall() {
         echo "Waiting for Container Warmups before running post-install operations..."
         sleep 10 # This is base time. To add further delay, execute the sleep inside of the postinstall...
         echo "Executing post-install operations"
-        while IFS= read -r line
+
+        while read -r line
         do
             echo " -> docker-compose exec $line"
-            docker-compose exec $line &
+            docker-compose exec $line </dev/null || true &
             wait
         done < "$POSTINSTALL_FILE"
+
+        echo "Finished post-install operations"
     fi
 }
 
