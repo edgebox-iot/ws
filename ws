@@ -139,9 +139,18 @@ while [ $# -gt 0 ] ; do
             EDGEBOX_COMPOSE_FILE="$d$config_name"
             EDGEBOX_ENV_FILE="$d$env_name"
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
+            MYEDGEAPP_ENV_FILE="$d$myedgeappenv_name"
+            INTERNET_URL=""
         if test -f "$EDGEBOX_COMPOSE_FILE"; then
         echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
+                echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
+                if test -f "$MYEDGEAPP_ENV_FILE"; then
+                    export $(cat $MYEDGEAPP_ENV_FILE | xargs)
+                    echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
+                    INTERNET_URL_NOCOMMA="$INTERNET_URL"
+                    INTERNET_URL=",$INTERNET_URL"
+                fi
                 BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
         fi
         if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
@@ -192,7 +201,9 @@ while [ $# -gt 0 ] ; do
         echo "Starting Services"
         docker-compose up -d --build
 
-        run_postinstall
+        if ! [ "$2" = "--fast" ]; then
+            run_postinstall
+        fi
 
         publish_mdns_entries
 
