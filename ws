@@ -146,10 +146,13 @@ while [ $# -gt 0 ] ; do
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
                 echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
                 if test -f "$MYEDGEAPP_ENV_FILE"; then
+                    if grep -q 'INTERNET_URL' "$MYEDGEAPP_ENV_FILE"; then
                     export $(cat $MYEDGEAPP_ENV_FILE | xargs)
                     echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
                     INTERNET_URL_NOCOMMA="$INTERNET_URL"
                     INTERNET_URL=",$INTERNET_URL"
+                    fi
+                    
                 fi
                 BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
         fi
