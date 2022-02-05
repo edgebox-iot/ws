@@ -5,7 +5,7 @@ services:
   ######################################
   proxy:
     build:
-        context: "./bin/proxy/${BUILD_ARCH}"
+      context: "./bin/proxy/${BUILD_ARCH}"
     container_name: '${COMPOSE_PROJECT_NAME}-proxy'
     restart: unless-stopped
     ports:
