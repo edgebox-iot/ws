@@ -37,10 +37,14 @@
   <span class='particle'>please wait...</span>
   <article class='content'>
     <p><img src="/crest.png"></p>
+    <div class="loading" style="color: #595959;"></div>
     <p><strong>Installing</strong></p>
-    <p>Please wait while Edgebox sets the necessary components for you</p>
+    <div class="loading" style="color: #595959; margin-top: -25px; padding-bottom: 25px;"></div>
+    <p>Please wait while Edgebox is starting and configuring itself for the first time</p>
     <p>
+        <br>
     </p>
+    <p style="font-size: 10px;"><i>This will take approximately 20 minutes</i></p>
   </article>
 </main>
 <!-- partial -->
@@ -75,7 +79,17 @@
       if (value == 100) {
         clearInterval(interval);
       }
-    }, 2000);
+    }, 12000);
+
+    // How much does set interval need to take exactly 20 minutes iterating a number from 0 to 100?
+
+    // 20 minutes = 1200 seconds
+    // 1200 seconds / 100 = 12 seconds per iteration
+    // 12 seconds / 2 = 6 seconds per increment
+    // 6 seconds / 100 = 0.06 seconds per increment
+    // 0.06 seconds * 1000 = 60 milliseconds per increment
+
+
   </script>
 </body>
 </html>
