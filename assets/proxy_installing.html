@@ -66,6 +66,7 @@
 
     var value = 0;
     var interval = setInterval(function () {
+      console.log("Progress: " + value + "%")
       value++;
       for (var i = 0; i < elements.length; i++) {
         var element = elements[i];
@@ -81,13 +82,22 @@
       }
     }, 12000);
 
-    // How much does set interval need to take exactly 20 minutes iterating a number from 0 to 100?
+    // Check with fetch if the file installing.html responds with 200 OK
+    // If it does, then we can assume that the installation is still underway
+    // If it doesn't, then we can assume that the installation is complete
 
-    // 20 minutes = 1200 seconds
-    // 1200 seconds / 100 = 12 seconds per iteration
-    // 12 seconds / 2 = 6 seconds per increment
-    // 6 seconds / 100 = 0.06 seconds per increment
-    // 0.06 seconds * 1000 = 60 milliseconds per increment
+    var interval = setInterval(function () {
+      fetch('/installing.html')
+        .then(function (response) {
+          if (response.status == 200) {
+            console.log("Installation is still underway");
+          } else {
+            console.log("Installation is complete");
+            clearInterval(interval);
+            window.location.href = "http://api.edgebox.local";
+          }
+        })
+    }, 1000);
 
 
   </script>
