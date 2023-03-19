@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>EdgeBox - 404 app not found</title>
+  <link rel="stylesheet" href="/style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<main class='container'>
+  <span class='particle'>🚀</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>starting...</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>😍</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>getting ready...</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>👋</span>
+  <span class='particle'>🚦%</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>welcome!</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>🤔</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>thinking...</span>
+  <span class='particle'>0%</span>
+  <span class='particle'>🌟</span>
+  <span class='particle'>🤓</span>
+  <span class='particle'>🎉</span>
+  <span class='particle'>...</span>
+  <span class='particle'>...</span>
+  <span class='particle'>please wait...</span>
+  <article class='content'>
+    <p><img src="/crest.png"></p>
+    <div class="loading" style="color: #595959;"></div>
+    <p><strong>Installing</strong></p>
+    <div class="loading" style="color: #595959; margin-top: -25px; padding-bottom: 25px;"></div>
+    <p>Please wait while Edgebox is starting and configuring itself for the first time</p>
+    <p>
+        <br>
+    </p>
+    <p style="font-size: 10px;"><i>This will take approximately 20 minutes</i></p>
+  </article>
+</main>
+<!-- partial -->
+  <!-- <script  src="/script.js"></script> -->
+  <script>
+    console.log('Gradually incrementing particle value for all elements...');
+    var elements = document.getElementsByClassName('particle');
+
+    // Make all particles have an annimation effect of a smoothly moving gradient color as their font color
+    setInterval(() => {
+      for (var i = 0; i < elements.length; i++) {
+        var element = elements[i];
+        element.style.color = 'hsl(' + Math.floor(Math.random() * 360) + ', 100%, 50%)';
+        element.style.animation = 'color-change 2s infinite';
+        // It should have a gradual transition from one color to the other
+        element.style.transition = 'color 2s';
+      }
+    }, 100);
+
+    var value = 0;
+    var interval = setInterval(function () {
+      console.log("Progress: " + value + "%")
+      value++;
+      for (var i = 0; i < elements.length; i++) {
+        var element = elements[i];
+        element.innerHTML = value + '%';
+        // There is a one in 30 change that this element turns into a random emoji in a list
+        var emoji_list = ['🚀', '👋', '🤔', '🌟', '🤓', '🎉', '🚦', '😍'];
+        if (Math.floor(Math.random() * 30) == 0) {
+          element.innerHTML = emoji_list[Math.floor(Math.random() * emoji_list.length)];
+        }
+      }
+      if (value == 100) {
+        clearInterval(interval);
+      }
+    }, 12000);
+
+    // Check with fetch if the file installing.html responds with 200 OK
+    // If it does, then we can assume that the installation is still underway
+    // If it doesn't, then we can assume that the installation is complete
+
+    var interval = setInterval(function () {
+      fetch('/installing.html')
+        .then(function (response) {
+          if (response.status == 200) {
+            console.log("Installation is still underway");
+          } else {
+            console.log("Installation is complete");
+            clearInterval(interval);
+            window.location.href = "http://api.edgebox.local";
+          }
+        })
+    }, 1000);
+
+
+  </script>
+</body>
+</html>

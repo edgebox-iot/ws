@@ -3,3 +3,4 @@ module-configs/*
 !module-configs/.gitkeep
 docker-compose.yml
 .ready
+assets/.install
