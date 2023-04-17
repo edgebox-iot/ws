@@ -51,7 +51,7 @@ run_postinstall() {
 }
 
 get_lan_ip () {
-    for adaptor in eth0 wlan0; do
+    for adaptor in eth0 wlan0 enp0s1; do
         if ip -o -4 addr list $adaptor  > /dev/null 2>&1 ; then
             ip=$(ip -o -4 addr list $adaptor | awk '{print $4}' | cut -d/ -f1)
         fi
