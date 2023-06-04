@@ -158,6 +158,7 @@ while [ $# -gt 0 ] ; do
         runnable_file=".run"
         global_composer="docker-compose"
         host_name=$(hostname)
+        export HOSTNAME="$host_name"
     
         if test -f ./module-configs/postinstall.txt; then
             rm module-configs/postinstall.txt
