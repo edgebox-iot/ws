@@ -176,10 +176,14 @@ while [ $# -gt 0 ] ; do
             POSTINSTALL_DONE_FILE="$d$(echo $postinstall_file | sed 's/.txt/.done/')"
             MYEDGEAPP_ENV_FILE="$d$myedgeappenv_name"
             INTERNET_URL=""
+            LOCAL_URL=""
+            MAIN_URL=""
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
                 echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
                 LOCAL_URL="$DIR_NAME.$host_name.local"
+                MAIN_URL=$LOCAL_URL
+                export LOCAL_URL="$LOCAL_URL"
                 echo " ----> LOCAL_VIRTUAL_HOST entry: $LOCAL_URL"
                 # echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
                 if test -f "$MYEDGEAPP_ENV_FILE"; then
@@ -187,6 +191,7 @@ while [ $# -gt 0 ] ; do
                         export $(cat $MYEDGEAPP_ENV_FILE | xargs)
                         echo " ----> INTERNET_VIRTUAL_HOST entry: $INTERNET_URL"
                         INTERNET_URL_NOCOMMA="$INTERNET_URL"
+                        MAIN_URL=$INTERNET_URL_NOCOMMA
                         INTERNET_URL=",$INTERNET_URL"
                     fi
                 fi
@@ -197,6 +202,7 @@ while [ $# -gt 0 ] ; do
                 else
                     APP_ENV_FILE_FLAG=""
                 fi
+                export MAIN_URL="$MAIN_URL"
                 BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
             if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
@@ -229,6 +235,7 @@ while [ $# -gt 0 ] ; do
             MYEDGEAPP_ENV_FILE="$d$myedgeappenv_name"
             INTERNET_URL=""
             LOCAL_URL=""
+            MAIN_URL=""
 
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
                 echo " - Found Edgebox Application Config File"
@@ -236,6 +243,8 @@ while [ $# -gt 0 ] ; do
                     echo " ----> Building EdgeApp -> $(basename $d)"
                     global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
                     LOCAL_URL="$DIR_NAME.$host_name.local"
+                    MAIN_URL=$LOCAL_URL
+                    export LOCAL_URL="$LOCAL_URL"
                     echo " ----> LOCAL_VIRTUAL_HOST entry: $LOCAL_URL"
                     # Check existance of myedge.app config file, apply it as ENV VAR before building config file.
                     # echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
@@ -243,6 +252,7 @@ while [ $# -gt 0 ] ; do
                         export $(cat $MYEDGEAPP_ENV_FILE | xargs)
                         echo " ----> INTERNET_VIRTUAL_HOST entry: $INTERNET_URL"
                         INTERNET_URL_NOCOMMA="$INTERNET_URL"
+                        MAIN_URL=$INTERNET_URL_NOCOMMA
                         INTERNET_URL=",$INTERNET_URL"
                     fi
                     if test -f "$APP_ENV_FILE"; then
@@ -252,6 +262,7 @@ while [ $# -gt 0 ] ; do
                     else
                         APP_ENV_FILE_FLAG=""
                     fi
+                    export MAIN_URL="$MAIN_URL"
                     BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
                 else
                     echo " ----> EdgeApp -> $(basename $d) is not runnable. Skipping..."
