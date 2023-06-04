@@ -105,8 +105,9 @@ publish_mdns_entries() {
             HOSTS_FILE="$d$config_name"
             SERVICE_NAME="$(basename $d)"
             if test -f "$HOSTS_FILE"; then
-                echo "Found configuration for $SERVICE_NAME service"
+                # echo "Found configuration for $SERVICE_NAME service"
                 while IFS= read -r line; do
+                    echo "Publishing domain $line$domain"
                     nohup avahi-publish -a -R $line$domain $local_ip >/dev/null 2>&1 &
                     sleep 3
                 done < "$HOSTS_FILE"
@@ -119,7 +120,7 @@ publish_mdns_entries() {
             SERVICE_NAME="$(basename $d)"
             RUNNABLE_FILE="$d$runnable_file"
             if test -f "$HOSTS_FILE"; then
-                echo "Found configuration for $SERVICE_NAME edgeapp"
+                # echo "Found configuration for $SERVICE_NAME edgeapp"
                 if test -f "$RUNNABLE_FILE"; then
                     while IFS= read -r line; do
                         echo "Publishing domain $line$domain"
@@ -179,18 +180,18 @@ while [ $# -gt 0 ] ; do
                 echo " - Building $(basename $d) module"
                 global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
                 LOCAL_URL="$DIR_NAME.$host_name.local"
-                echo " - Adding VIRTUAL_HOST entry for $LOCAL_URL"
-                echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
+                echo " ----> LOCAL_VIRTUAL_HOST entry: $LOCAL_URL"
+                # echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
                 if test -f "$MYEDGEAPP_ENV_FILE"; then
                     if grep -q 'INTERNET_URL' "$MYEDGEAPP_ENV_FILE"; then
                         export $(cat $MYEDGEAPP_ENV_FILE | xargs)
-                        echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
+                        echo " ----> INTERNET_VIRTUAL_HOST entry: $INTERNET_URL"
                         INTERNET_URL_NOCOMMA="$INTERNET_URL"
                         INTERNET_URL=",$INTERNET_URL"
                     fi
                 fi
                 if test -f "$APP_ENV_FILE"; then
-                    echo " - Adding environment file $APP_ENV_FILE"
+                    echo " ----> APP_ENV_FILE entry: $APP_ENV_FILE"
                     APP_ENV_FILE_FLAG=" --env-file=$APP_ENV_FILE"
                     INTERNET_URL=",$INTERNET_URL"
                 else
@@ -202,13 +203,13 @@ while [ $# -gt 0 ] ; do
                 # If POSTINSTALL_DONE_FILE exists and the content is the same as the EDGEBOX_POSTINSTALL_FILE, it means that the postinstall has already been executed. We don't want to execute it again.
                 if test -f "$POSTINSTALL_DONE_FILE"; then
                     if cmp -s "$EDGEBOX_POSTINSTALL_FILE" "$POSTINSTALL_DONE_FILE"; then
-                        echo " - Postinstall already executed for $(basename $d)"
+                        echo " ----> Postinstall already executed for $(basename $d)"
                     else
-                        echo " - Building $(basename $d) post-install"
+                        echo " ----> Building $(basename $d) post-install"
                         cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
                     fi
                 else
-                    echo " - Building $(basename $d) post-install"
+                    echo " ----> Building $(basename $d) post-install"
                     cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
                 fi
             fi
@@ -232,26 +233,28 @@ while [ $# -gt 0 ] ; do
             if test -f "$EDGEBOX_COMPOSE_FILE"; then
                 echo " - Found Edgebox Application Config File"
                 if test -f "$EDGEBOX_RUNNABLE_FILE"; then
-                    echo " - Building EdgeApp -> $(basename $d)"
+                    echo " ----> Building EdgeApp -> $(basename $d)"
                     global_composer="${global_composer} -f ./module-configs/$(basename $d).yml"
                     LOCAL_URL="$DIR_NAME.$host_name.local"
-                    echo " - Adding VIRTUAL_HOST entry for $LOCAL_URL"
+                    echo " ----> LOCAL_VIRTUAL_HOST entry: $LOCAL_URL"
                     # Check existance of myedge.app config file, apply it as ENV VAR before building config file.
-                    echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
+                    # echo " - Testing existance of $MYEDGEAPP_ENV_FILE"
                     if test -f "$MYEDGEAPP_ENV_FILE"; then
                         export $(cat $MYEDGEAPP_ENV_FILE | xargs)
-                        echo " - Adding VIRTUAL_HOST entry for $INTERNET_URL"
+                        echo " ----> INTERNET_VIRTUAL_HOST entry: $INTERNET_URL"
                         INTERNET_URL_NOCOMMA="$INTERNET_URL"
                         INTERNET_URL=",$INTERNET_URL"
                     fi
                     if test -f "$APP_ENV_FILE"; then
-                        echo " - Adding environment file $APP_ENV_FILE"
+                        echo " ----> APP_ENV_FILE entry: $APP_ENV_FILE"
                         APP_ENV_FILE_FLAG=" --env-file=$APP_ENV_FILE"
                         INTERNET_URL=",$INTERNET_URL"
                     else
                         APP_ENV_FILE_FLAG=""
                     fi
                     BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                else
+                    echo " ----> EdgeApp -> $(basename $d) is not runnable. Skipping..."
                 fi
             fi
             if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
@@ -259,13 +262,13 @@ while [ $# -gt 0 ] ; do
                 INTERNET_URL="$INTERNET_URL_NOCOMMA"
                 if test -f "$POSTINSTALL_DONE_FILE"; then
                     if cmp -s "$EDGEBOX_POSTINSTALL_FILE" "$POSTINSTALL_DONE_FILE"; then
-                        echo " - Postinstall already executed for $(basename $d)"
+                        echo " ----> Postinstall already executed for $(basename $d)"
                     else
-                        echo " - Building $(basename $d) post-install"
+                        echo " ----> Building $(basename $d) post-install"
                         cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
                     fi
                 else
-                    echo " - Building $(basename $d) post-install"
+                    echo " ----> Building $(basename $d) post-install"
                     cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
                 fi
             fi
