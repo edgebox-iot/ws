@@ -198,13 +198,15 @@ while [ $# -gt 0 ] ; do
                 fi
                 if test -f "$APP_ENV_FILE"; then
                     echo " ----> APP_ENV_FILE entry: $APP_ENV_FILE"
-                    APP_ENV_FILE_FLAG=" --env-file=$APP_ENV_FILE"
+                    # APP_ENV_FILE_FLAG="--env-file=$APP_ENV_FILE"
+                    APP_ENV_FILE_FLAG=""
+                    export $(cat $APP_ENV_FILE | xargs)
                     INTERNET_URL=",$INTERNET_URL"
                 else
                     APP_ENV_FILE_FLAG=""
                 fi
                 export MAIN_URL="$MAIN_URL"
-                BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
             if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
                 # If POSTINSTALL_DONE_FILE exists and the content is the same as the EDGEBOX_POSTINSTALL_FILE, it means that the postinstall has already been executed. We don't want to execute it again.
@@ -258,7 +260,9 @@ while [ $# -gt 0 ] ; do
                     fi
                     if test -f "$APP_ENV_FILE"; then
                         echo " ----> APP_ENV_FILE entry: $APP_ENV_FILE"
-                        APP_ENV_FILE_FLAG=" --env-file=$APP_ENV_FILE"
+                        # APP_ENV_FILE_FLAG=" --env-file=$APP_ENV_FILE"
+                        APP_ENV_FILE_FLAG=""
+                        export $(cat $APP_ENV_FILE | xargs)
                         INTERNET_URL=",$INTERNET_URL"
                     else
                         APP_ENV_FILE_FLAG=""
@@ -281,7 +285,12 @@ while [ $# -gt 0 ] ; do
                     fi
                 else
                     echo " ----> Building $(basename $d) post-install"
-                    cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+                    # cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+                    while IFS= read -r line; do
+                        echo $line
+                        # Replace any env var in the line
+                        eval "echo $line" >> ./module-configs/postinstall.txt
+                    done < $EDGEBOX_POSTINSTALL_FILE
                 fi
             fi
 
