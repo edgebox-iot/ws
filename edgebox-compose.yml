@@ -14,3 +14,4 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./assets:/usr/share/nginx/html/
       - ./proxy.conf:/etc/nginx/proxy.conf
+      - ./module-configs/sec:/etc/nginx/htpasswd

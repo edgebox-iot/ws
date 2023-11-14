@@ -153,6 +153,7 @@ while [ $# -gt 0 ] ; do
         config_name="edgebox-compose.yml"
         env_name="edgebox.env"
         appenv_name="edgeapp.env"
+        authenv_name="auth.env"
         myedgeappenv_name="myedgeapp.env"
         postinstall_file="edgebox-postinstall.txt"
         runnable_file=".run"
@@ -165,6 +166,7 @@ while [ $# -gt 0 ] ; do
         fi
     
         touch module-configs/postinstall.txt
+        mkdir -p module-configs/sec_tmp
 
         for d in ../*/ ; do
             DIR_NAME="$(basename $d)"
@@ -172,6 +174,7 @@ while [ $# -gt 0 ] ; do
             EDGEBOX_COMPOSE_FILE="$d$config_name"
             EDGEBOX_ENV_FILE="$d$env_name"
             APP_ENV_FILE="$d$appenv_name"
+            AUTH_ENV_FILE="$d$authenv_name"
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
             # A POSTINSTALL_DONE file is created in the module's directory to indicate that the postinstall has been executed. It should replace the .txt extension with .done
             POSTINSTALL_DONE_FILE="$d$(echo $postinstall_file | sed 's/.txt/.done/')"
@@ -205,6 +208,21 @@ while [ $# -gt 0 ] ; do
                 else
                     APP_ENV_FILE_FLAG=""
                 fi
+                if test -f "$AUTH_ENV_FILE"; then
+                    echo " ----> AUTH_ENV_FILE entry: $AUTH_ENV_FILE"
+                    # AUTH_ENV_FILE_FLAG="--env-file=$AUTH_ENV_FILE"
+                    AUTH_ENV_FILE_FLAG=""
+                    export $(cat $AUTH_ENV_FILE | xargs)
+                    echo " ----> Building $(basename $d) basic auth token"
+                    echo "Username: $USERNAME"
+                    echo "Password: $PASSWORD"
+                    # Thw following line writes the command not the output to the file
+                    # htpasswd -nb $USERNAME $PASSWORD > ./module-configs/sec/$MAIN_URL
+                    # The following line writes the output to the file
+                    htpasswd -nb $USERNAME $PASSWORD | tee ./module-configs/sec_tmp/$MAIN_URL
+                else
+                    AUTH_ENV_FILE_FLAG=""
+                fi
                 export MAIN_URL="$MAIN_URL"
                 BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
@@ -231,7 +249,7 @@ while [ $# -gt 0 ] ; do
             EDGEBOX_COMPOSE_FILE="$d$config_name"
             EDGEBOX_ENV_FILE="$d$env_name"
             APP_ENV_FILE="$d$appenv_name"
-
+            AUTH_ENV_FILE="$d$authenv_name"
             EDGEBOX_POSTINSTALL_FILE="$d$postinstall_file"
             POSTINSTALL_DONE_FILE="$d$(echo $postinstall_file | sed 's/.txt/.done/')"
             EDGEBOX_RUNNABLE_FILE="$d$runnable_file"
@@ -266,6 +284,18 @@ while [ $# -gt 0 ] ; do
                         INTERNET_URL=",$INTERNET_URL"
                     else
                         APP_ENV_FILE_FLAG=""
+                    fi
+                    if test -f "$AUTH_ENV_FILE"; then
+                        echo " ----> AUTH_ENV_FILE entry: $AUTH_ENV_FILE"
+                        # AUTH_ENV_FILE_FLAG="--env-file=$AUTH_ENV_FILE"
+                        AUTH_ENV_FILE_FLAG=""
+                        export $(cat $AUTH_ENV_FILE | xargs)
+                        echo " ----> Building $(basename $d) basic auth token"
+                        echo "Username: $USERNAME"
+                        echo "Password: $PASSWORD"
+                        htpasswd -nb $USERNAME $PASSWORD | tee ./module-configs/sec_tmp/$MAIN_URL
+                    else
+                        AUTH_ENV_FILE_FLAG=""
                     fi
                     export MAIN_URL="$MAIN_URL"
                     BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
@@ -311,6 +341,9 @@ while [ $# -gt 0 ] ; do
         if ! [ "$2" = "--fast" ]; then
         publish_mdns_entries
         fi
+
+        # Reset Basic Auth Tokens
+        rm -rf module-configs/sec/* && mv module-configs/sec_tmp/* module-configs/sec/ && rm -rf module-configs/sec_tmp
 
         touch .ready
 
