@@ -343,7 +343,7 @@ while [ $# -gt 0 ] ; do
         fi
 
         # Reset Basic Auth Tokens
-        rm -rf module-configs/sec/* && mv module-configs/sec_tmp/* module-configs/sec/ && rm -rf module-configs/sec_tmp
+        rm -rf module-configs/sec/* && mv module-configs/sec_tmp/* module-configs/sec/ || true && rm -rf module-configs/sec_tmp
 
         touch .ready
 
