@@ -36,7 +36,7 @@ These folders are not considered apps, and instead are internal components of th
 ### Clean
 
 ```bash
-$ ./ws --c
+$ ./ws -c
 ```
 
-This cleans the `module-configs` folder, removing any generated `docker-compose.yml` files and accompanying service definition files `<appname>.yml``.
+This cleans the `module-configs` folder, removing any generated `docker-compose.yml` files and accompanying service definition files `<appname>.yml``. Ideal when developing to clearn any caches and make sure all generated config files are fresh. 
