@@ -299,28 +299,28 @@ while [ $# -gt 0 ] ; do
                     fi
                     export MAIN_URL="$MAIN_URL"
                     BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
-                else
-                    echo " ----> EdgeApp -> $(basename $d) is not runnable. Skipping..."
-                fi
-            fi
-            if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
-                # If POSTINSTALL_DONE_FILE exists and the content is the same as the EDGEBOX_POSTINSTALL_FILE, it means that the postinstall has already been executed. We don't want to execute it again.
-                INTERNET_URL="$INTERNET_URL_NOCOMMA"
-                if test -f "$POSTINSTALL_DONE_FILE"; then
-                    if cmp -s "$EDGEBOX_POSTINSTALL_FILE" "$POSTINSTALL_DONE_FILE"; then
-                        echo " ----> Postinstall already executed for $(basename $d)"
-                    else
-                        echo " ----> Building $(basename $d) post-install"
-                        cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+                    if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
+                        # If POSTINSTALL_DONE_FILE exists and the content is the same as the EDGEBOX_POSTINSTALL_FILE, it means that the postinstall has already been executed. We don't want to execute it again.
+                        INTERNET_URL="$MAIN_URL"
+                        if test -f "$POSTINSTALL_DONE_FILE"; then
+                            if cmp -s "$EDGEBOX_POSTINSTALL_FILE" "$POSTINSTALL_DONE_FILE"; then
+                                echo " ----> Postinstall already executed for $(basename $d)"
+                            else
+                                echo " ----> Building $(basename $d) post-install"
+                                cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+                            fi
+                        else
+                            echo " ----> Building $(basename $d) post-install"
+                            # cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
+                            while IFS= read -r line; do
+                                echo $line
+                                # Replace any env var in the line
+                                eval "echo $line" >> ./module-configs/postinstall.txt
+                            done < $EDGEBOX_POSTINSTALL_FILE
+                        fi
                     fi
                 else
-                    echo " ----> Building $(basename $d) post-install"
-                    # cat $EDGEBOX_POSTINSTALL_FILE >> ./module-configs/postinstall.txt
-                    while IFS= read -r line; do
-                        echo $line
-                        # Replace any env var in the line
-                        eval "echo $line" >> ./module-configs/postinstall.txt
-                    done < $EDGEBOX_POSTINSTALL_FILE
+                    echo " ----> EdgeApp -> $(basename $d) is not runnable. Skipping..."
                 fi
             fi
 
