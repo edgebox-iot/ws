@@ -298,6 +298,8 @@ while [ $# -gt 0 ] ; do
                         AUTH_ENV_FILE_FLAG=""
                     fi
                     export MAIN_URL="$MAIN_URL"
+		            export INTERNET_URL="$INTERNET_URL"
+		            echo "INTERNET_URL: $INTERNET_URL"
                     BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
                     if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
                         # If POSTINSTALL_DONE_FILE exists and the content is the same as the EDGEBOX_POSTINSTALL_FILE, it means that the postinstall has already been executed. We don't want to execute it again.
