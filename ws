@@ -334,7 +334,7 @@ while [ $# -gt 0 ] ; do
         eval $global_composer
 
         echo "Starting Services"
-        docker-compose up -d --build
+        docker-compose up -d --build --remove-orphans
 
         if ! [ "$2" = "--fast" ]; then
             run_postinstall
