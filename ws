@@ -50,12 +50,25 @@ run_postinstall() {
         while read -r line
         do
             echo " -> docker-compose exec $line"
-            docker-compose exec $line </dev/null || true &
+            docker-compose exec $line </dev/null || true
             wait
         done < "$POSTINSTALL_FILE"
 
+        # Execute the postinstall sh file in each of the directories of ../apps/
         # Recreate the postinstall file in each of the directories of ../apps/ to indicate that it has been executed
         for d in ../apps/*/ ; do
+            POSTINSTALL_SH_FILE="$d$(echo $postinstall_file | sed 's/.txt/.sh/')"
+            # Execute the postinstall.sh file locally
+            if test -f "$POSTINSTALL_SH_FILE"; then
+                echo " -> Executing post-install script for $(basename $d)"
+                # Set current directory to the module directory
+                cd $d
+                chmod +x ./edgebox-postinstall.sh
+                ./edgebox-postinstall.sh
+                cd ../../ws
+                wait
+            fi
+
             POSTINSTALL_FILE="$d$postinstall_file"
             POSTINSTALL_DONE_FILE="$d$(echo $postinstall_file | sed 's/.txt/.done/')"
             if test -f "$POSTINSTALL_FILE"; then
@@ -214,8 +227,6 @@ while [ $# -gt 0 ] ; do
                     AUTH_ENV_FILE_FLAG=""
                     export $(cat $AUTH_ENV_FILE | xargs)
                     echo " ----> Building $(basename $d) basic auth token"
-                    echo "Username: $USERNAME"
-                    echo "Password: $PASSWORD"
                     # Thw following line writes the command not the output to the file
                     # htpasswd -nb $USERNAME $PASSWORD > ./module-configs/sec/$MAIN_URL
                     # The following line writes the output to the file
@@ -334,14 +345,16 @@ while [ $# -gt 0 ] ; do
         eval $global_composer
 
         echo "Starting Services"
-        docker-compose up -d --build --remove-orphans
+        docker-compose up -d --build --remove-orphans || true
+
+        echo "Docker Containers Started, now running post-install operations"
 
         if ! [ "$2" = "--fast" ]; then
             run_postinstall
         fi
 
         if ! [ "$2" = "--fast" ]; then
-        publish_mdns_entries
+            publish_mdns_entries
         fi
 
         # Reset Basic Auth Tokens
