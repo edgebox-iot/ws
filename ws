@@ -78,6 +78,18 @@ run_postinstall() {
 
         # And do the same for ../
         for d in ../*/ ; do
+            POSTINSTALL_SH_FILE="$d$(echo $postinstall_file | sed 's/.txt/.sh/')"
+            # Execute the postinstall.sh file locally
+            if test -f "$POSTINSTALL_SH_FILE"; then
+                echo " -> Executing post-install script for $(basename $d)"
+                # Set current directory to the module directory
+                cd $d
+                chmod +x ./edgebox-postinstall.sh
+                ./edgebox-postinstall.sh
+                cd ../ws
+                wait
+            fi
+
             POSTINSTALL_FILE="$d$postinstall_file"
             POSTINSTALL_DONE_FILE="$d$(echo $postinstall_file | sed 's/.txt/.done/')"
             if test -f "$POSTINSTALL_FILE"; then
