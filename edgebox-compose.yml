@@ -10,6 +10,10 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - HOST_URL=http://host.docker.internal:8080
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./assets:/usr/share/nginx/html/

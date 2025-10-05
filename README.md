@@ -27,7 +27,7 @@ $ ./ws -b
 ```
 
 This will go through each folder in the `/home/system/components/apps/` folder ([Check the `apps` repo for more information on the structure of an app](https://github.com/edgebox-iot/apps)), and configure the containers for each valid app entry. 
-After running this command, You should have a `docker-compose.yml` file in the the root of this repository (it is git igored) with the final generated configuration which will then be used to spawn the containers via the `docker-compose up -d` command.
+After running this command, You should have a `docker-compose.yml` file in the the root of this repository (it is git igored) with the final generated configuration which will then be used to spawn the containers via the `docker compose up -d` command.
 The containers will also automatically start, and be available on the configured `VIRTUAL_HOST` of each app.
 
 Aditionally, this module also configures any folder on `/home/system/compoennts/` folder that contains an `edgebox-compose.yml` file, and starts the containers too.

@@ -22,10 +22,10 @@ Options:
 -h, --help               display this usage message and exit
 -b, --build              build global docker-commpose file
 -c, --clean              clean appdata directory
--s, --start              docker-compose up -d
--l, --logs [SERVICE]     docker-compose logs for [SERVICE]
--r, --restart [SERVICE]  docker-compose restart [SERVICE]
--k, --kill               docker-compose down
+-s, --start              docker compose up -d
+-l, --logs [SERVICE]     docker compose logs for [SERVICE]
+-r, --restart [SERVICE]  docker compose restart [SERVICE]
+-k, --kill               docker compose down
 -o, --output [FILE]      write output to file
 
 EOF
@@ -49,8 +49,8 @@ run_postinstall() {
 
         while read -r line
         do
-            echo " -> docker-compose exec $line"
-            docker-compose exec $line </dev/null || true
+            echo " -> docker compose exec $line"
+            docker compose exec $line </dev/null || true
             wait
         done < "$POSTINSTALL_FILE"
 
@@ -170,7 +170,7 @@ while [ $# -gt 0 ] ; do
         myedgeappenv_name="myedgeapp.env"
         postinstall_file="edgebox-postinstall.txt"
         runnable_file=".run"
-        global_composer="docker-compose"
+        global_composer="docker compose"
         host_name=$(hostname)
         export HOSTNAME="$host_name"
     
@@ -235,7 +235,7 @@ while [ $# -gt 0 ] ; do
                     AUTH_ENV_FILE_FLAG=""
                 fi
                 export MAIN_URL="$MAIN_URL"
-                BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                BUILD_ARCH=$(uname -m) docker compose --env-file=$EDGEBOX_ENV_FILE -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
             fi
             if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
                 # If POSTINSTALL_DONE_FILE exists and the content is the same as the EDGEBOX_POSTINSTALL_FILE, it means that the postinstall has already been executed. We don't want to execute it again.
@@ -311,7 +311,7 @@ while [ $# -gt 0 ] ; do
                     export MAIN_URL="$MAIN_URL"
 		            export INTERNET_URL="$INTERNET_URL"
 		            echo "INTERNET_URL: $INTERNET_URL"
-                    BUILD_ARCH=$(uname -m) docker-compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
+                    BUILD_ARCH=$(uname -m) docker compose --env-file=$EDGEBOX_ENV_FILE$APP_ENV_FILE_FLAG -f $EDGEBOX_COMPOSE_FILE config > module-configs/$(basename $d).yml
                     if test -f "$EDGEBOX_POSTINSTALL_FILE"; then
                         # If POSTINSTALL_DONE_FILE exists and the content is the same as the EDGEBOX_POSTINSTALL_FILE, it means that the postinstall has already been executed. We don't want to execute it again.
                         INTERNET_URL="$MAIN_URL"
@@ -345,7 +345,7 @@ while [ $# -gt 0 ] ; do
         eval $global_composer
 
         echo "Starting Services"
-        docker-compose up -d --build --remove-orphans || true
+        docker compose up -d --build --remove-orphans || true
 
         echo "Docker Containers Started, now running post-install operations"
 
@@ -365,27 +365,27 @@ while [ $# -gt 0 ] ; do
         ;;
     -s|--start)
         start=1
-        docker-compose up -d
+        docker compose up -d
         publish_mdns_entries
         ;;
     -l|--logs)
         logs=1
-        docker-compose logs $2
+        docker compose logs $2
         ;;
     -r|--restart)
         restart=1
-        docker-compose restart $2
+        docker compose restart $2
         kill_mdns_entries
         publish_mdns_entries
         ;;
     -k|--kill)
         kill=1
-        docker-compose down
+        docker compose down
         kill_mdns_entries
         ;;
     -t|--terminal)
         terminal=1
-        docker-compose exec $2 bash
+        docker compose exec $2 bash
         ;;
     -c|--clean)
         clean
