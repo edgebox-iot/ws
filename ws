@@ -64,7 +64,7 @@ run_postinstall() {
                 # Set current directory to the module directory
                 cd $d
                 chmod +x ./edgebox-postinstall.sh
-                ./edgebox-postinstall.sh
+                ./edgebox-postinstall.sh || echo "Warning: post-install script failed for $(basename $d), continuing..."
                 cd ../../ws
                 wait
             fi
@@ -85,7 +85,7 @@ run_postinstall() {
                 # Set current directory to the module directory
                 cd $d
                 chmod +x ./edgebox-postinstall.sh
-                ./edgebox-postinstall.sh
+                ./edgebox-postinstall.sh || echo "Warning: post-install script failed for $(basename $d), continuing..."
                 cd ../ws
                 wait
             fi
